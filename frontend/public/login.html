@@ -3,60 +3,103 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Login - Artigianato Online</title>
+  <title>Login / Registrazione</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
-  <div class="container mt-5" style="max-width: 400px;">
+  <div class="container mt-5">
     <h2>Login</h2>
     <form id="loginForm">
       <div class="mb-3">
-        <label for="email" class="form-label">Email</label>
-        <input type="email" class="form-control" id="email" required />
+        <label for="loginEmail" class="form-label">Email</label>
+        <input type="email" class="form-control" id="loginEmail" required />
       </div>
       <div class="mb-3">
-        <label for="password" class="form-label">Password</label>
-        <input type="password" class="form-control" id="password" required />
-      </div>
-      <div class="mb-3">
-        <label class="form-label">Sei un:</label><br/>
-        <input type="radio" id="cliente" name="role" value="cliente" checked />
-        <label for="cliente">Cliente</label>
-        <input type="radio" id="artigiano" name="role" value="artigiano" class="ms-3" />
-        <label for="artigiano">Artigiano</label>
+        <label for="loginPassword" class="form-label">Password</label>
+        <input type="password" class="form-control" id="loginPassword" required />
       </div>
       <button type="submit" class="btn btn-primary">Accedi</button>
-      <p class="mt-3">Non hai un account? <a href="register.html">Registrati qui</a></p>
+    </form>
+
+    <hr />
+
+    <h2>Registrazione</h2>
+    <form id="registerForm">
+      <div class="mb-3">
+        <label for="registerNome" class="form-label">Nome</label>
+        <input type="text" class="form-control" id="registerNome" required />
+      </div>
+      <div class="mb-3">
+        <label for="registerEmail" class="form-label">Email</label>
+        <input type="email" class="form-control" id="registerEmail" required />
+      </div>
+      <div class="mb-3">
+        <label for="registerPassword" class="form-label">Password</label>
+        <input type="password" class="form-control" id="registerPassword" required />
+      </div>
+      <div class="mb-3">
+        <label for="registerRole" class="form-label">Seleziona ruolo</label>
+        <select class="form-select" id="registerRole" required>
+          <option value="">-- Seleziona --</option>
+          <option value="cliente">Cliente</option>
+          <option value="artigiano">Artigiano</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-success">Registrati</button>
     </form>
 
     <div id="message" class="mt-3"></div>
   </div>
 
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>
-    $("#loginForm").submit(function(e) {
+    // Login form submit
+    $('#loginForm').submit(function(e) {
       e.preventDefault();
-
-      const data = {
-        email: $("#email").val(),
-        password: $("#password").val(),
-        role: $("input[name='role']:checked").val()
-      };
+      const email = $('#loginEmail').val();
+      const password = $('#loginPassword').val();
 
       $.ajax({
-        url: "/login",
-        method: "POST",
-        contentType: "application/json",
-        data: JSON.stringify(data),
-        success: function(res) {
-          $("#message").text("Login riuscito!").removeClass().addClass("alert alert-success");
-          // Qui puoi aggiungere redirect a pagine specifiche per ruolo
+        url: 'http://localhost:3000/api/login',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ email, password }),
+        success: function(data) {
+          $('#message').html('<div class="alert alert-success">Login effettuato con successo!</div>');
+          // Qui puoi salvare il token JWT e fare redirect, es:
+          // localStorage.setItem('token', data.token);
+          // window.location.href = 'home.html';
         },
         error: function(xhr) {
-          $("#message").text("Errore: " + xhr.responseJSON?.message || "Login fallito").removeClass().addClass("alert alert-danger");
+          $('#message').html('<div class="alert alert-danger">Errore login: ' + xhr.responseJSON.error + '</div>');
+        }
+      });
+    });
+
+    // Register form submit
+    $('#registerForm').submit(function(e) {
+      e.preventDefault();
+      const nome = $('#registerNome').val();
+      const email = $('#registerEmail').val();
+      const password = $('#registerPassword').val();
+      const role = $('#registerRole').val();
+
+      $.ajax({
+        url: 'http://localhost:3000/api/register',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ nome, email, password, role }),
+        success: function(data) {
+          $('#message').html('<div class="alert alert-success">Registrazione avvenuta con successo! Puoi ora effettuare il login.</div>');
+          $('#registerForm')[0].reset();
+        },
+        error: function(xhr) {
+          $('#message').html('<div class="alert alert-danger">Errore registrazione: ' + xhr.responseJSON.error + '</div>');
         }
       });
     });
   </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
