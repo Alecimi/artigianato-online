@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Artigianato Online - Home</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container">
+      <a class="navbar-brand" href="#">Artigianato Online</a>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    <h1>Benvenuti su Artigianato Online</h1>
+    <p>Qui potrai trovare prodotti artigianali unici realizzati da creativi locali.</p>
+
+    <button id="showMessage" class="btn btn-primary">Cliccami</button>
+    <div id="message" class="mt-3"></div>
+  </div>
+
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    $(document).ready(function () {
+      $("#showMessage").click(function () {
+        $("#message").text("Hai cliccato il pulsante!").addClass("alert alert-success");
+      });
+    });
+  </script>
+</body>
+</html>
