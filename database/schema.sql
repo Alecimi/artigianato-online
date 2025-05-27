@@ -9,22 +9,26 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- Tabella prodotti
-CREATE TABLE IF NOT EXISTS products (
+CREATE TABLE IF NOT EXISTS prodotti (
   id SERIAL PRIMARY KEY,
-  artigiano_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  nome VARCHAR(150) NOT NULL,
+  nome VARCHAR(255) NOT NULL,
   descrizione TEXT,
   prezzo NUMERIC(10,2) NOT NULL,
+  artigiano_id INTEGER REFERENCES users(id),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabella ordini
-CREATE TABLE IF NOT EXISTS orders (
+-- Tabella ordini (semplice, ogni ordine ha cliente e riferimento a prodotti in tabella ordini_prodotti)
+CREATE TABLE IF NOT EXISTS ordini (
   id SERIAL PRIMARY KEY,
-  cliente_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-  prodotto_id INTEGER REFERENCES products(id),
-  quantita INTEGER NOT NULL DEFAULT 1,
-  stato VARCHAR(50) DEFAULT 'in attesa',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  cliente_id INTEGER REFERENCES users(id),
+  data TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Tabella per gestire i prodotti in ogni ordine (relazione molti a molti)
+CREATE TABLE IF NOT EXISTS ordini_prodotti (
+  ordine_id INTEGER REFERENCES ordini(id),
+  prodotto_id INTEGER REFERENCES prodotti(id),
+  quantita INTEGER NOT NULL DEFAULT 1,
+  PRIMARY KEY (ordine_id, prodotto_id)
+);
