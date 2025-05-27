@@ -5,18 +5,67 @@
   <title>Dashboard Artigiano</title>
 </head>
 <body>
-    <script>
-        const token = localStorage.getItem("token");
-        if (!token) {
-        window.location.href = "login.html";
-        }
+  <h1>I tuoi prodotti</h1>
+  <ul id="lista-prodotti"></ul>
 
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        if (payload.role !== 'artigiano') {
-        window.location.href = "login.html";
+  <h2>Aggiungi nuovo prodotto</h2>
+  <form id="form-prodotto">
+    <input type="text" id="nome" placeholder="Nome prodotto" required />
+    <input type="text" id="descrizione" placeholder="Descrizione" />
+    <input type="number" step="0.01" id="prezzo" placeholder="Prezzo" required />
+    <button type="submit">Aggiungi</button>
+  </form>
+
+  <script>
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Devi fare login');
+      window.location.href = 'login.html';
+    }
+
+    function caricaProdotti() {
+      fetch('http://localhost:3000/api/artigiano/prodotti', {
+        headers: { 'Authorization': 'Bearer ' + token }
+      })
+      .then(res => res.json())
+      .then(data => {
+        const ul = document.getElementById('lista-prodotti');
+        ul.innerHTML = '';
+        data.forEach(prod => {
+          const li = document.createElement('li');
+          li.textContent = `${prod.nome} - €${prod.prezzo}`;
+          ul.appendChild(li);
+        });
+      })
+      .catch(err => console.error(err));
+    }
+
+    caricaProdotti();
+
+    document.getElementById('form-prodotto').addEventListener('submit', e => {
+      e.preventDefault();
+      const nome = document.getElementById('nome').value;
+      const descrizione = document.getElementById('descrizione').value;
+      const prezzo = document.getElementById('prezzo').value;
+
+      fetch('http://localhost:3000/api/artigiano/prodotti', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + token
+        },
+        body: JSON.stringify({ nome, descrizione, prezzo })
+      })
+      .then(res => {
+        if (res.status === 201) {
+          alert('Prodotto aggiunto');
+          caricaProdotti();
+          e.target.reset();
+        } else {
+          alert('Errore nell\'aggiunta prodotto');
         }
-    </script>
-  <h1>Benvenuto Artigiano!</h1>
-  <p>Qui potrai caricare e gestire i tuoi prodotti.</p>
+      });
+    });
+  </script>
 </body>
 </html>
