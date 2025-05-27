@@ -12,7 +12,9 @@
 
   <div class="container mt-4">
     <h1>Il tuo Profilo</h1>
-    <p>Gestisci il tuo account, visualizza ordini e modifica i tuoi dati.</p>
+    <div id="contenutoProfilo">
+      <p>Caricamento dati...</p>
+    </div>
   </div>
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
@@ -20,6 +22,149 @@
 
   <script>
     $("#navbar").load("navbar.html");
+
+    $(document).ready(function() {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      let payload;
+      try {
+        payload = JSON.parse(atob(token.split('.')[1]));
+      } catch(e) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      const contenuto = $('#contenutoProfilo');
+      contenuto.empty();
+
+      contenuto.append(`<h3>Benvenuto, ${payload.nome}</h3>`);
+
+      if (payload.role === 'cliente') {
+        contenuto.append(`
+          <h4>I tuoi ordini passati</h4>
+          <div id="ordini">Caricamento ordini...</div>
+        `);
+
+        // TODO: fetch ordini dal backend
+        fetch('/api/ordini', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) {
+            $('#ordini').text('Errore nel caricamento ordini.');
+          } else if (data.ordini.length === 0) {
+            $('#ordini').text('Non hai ordini passati.');
+          } else {
+            let lista = '<ul class="list-group">';
+            data.ordini.forEach(ord => {
+              lista += `<li class="list-group-item">Ordine #${ord.id} - Data: ${ord.data_ordine} - Totale: €${ord.totale}</li>`;
+            });
+            lista += '</ul>';
+            $('#ordini').html(lista);
+          }
+        })
+        .catch(() => {
+          $('#ordini').text('Errore nel caricamento ordini.');
+        });
+
+      } else if (payload.role === 'artigiano') {
+        contenuto.append(`
+          <h4>I tuoi prodotti</h4>
+          <div id="prodotti">Caricamento prodotti...</div>
+
+          <h5 class="mt-4">Aggiungi nuovo prodotto</h5>
+          <form id="aggiungiProdottoForm">
+            <div class="mb-3">
+              <input type="text" id="nomeProdotto" class="form-control" placeholder="Nome prodotto" required />
+            </div>
+            <div class="mb-3">
+              <input type="number" id="prezzoProdotto" class="form-control" placeholder="Prezzo (€)" min="0" step="0.01" required />
+            </div>
+            <button type="submit" class="btn btn-primary">Aggiungi</button>
+          </form>
+        `);
+
+        // Carica prodotti esistenti
+        fetch('/api/prodotti', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.error) {
+            $('#prodotti').text('Errore nel caricamento prodotti.');
+          } else if (data.prodotti.length === 0) {
+            $('#prodotti').text('Non hai prodotti caricati.');
+          } else {
+            let lista = '<ul class="list-group">';
+            data.prodotti.forEach(prod => {
+              lista += `<li class="list-group-item">${prod.nome} - €${prod.prezzo.toFixed(2)}</li>`;
+            });
+            lista += '</ul>';
+            $('#prodotti').html(lista);
+          }
+        })
+        .catch(() => {
+          $('#prodotti').text('Errore nel caricamento prodotti.');
+        });
+
+        // Gestione form aggiungi prodotto
+        $('#aggiungiProdottoForm').submit(function(e) {
+          e.preventDefault();
+
+          const nome = $('#nomeProdotto').val().trim();
+          const prezzo = parseFloat($('#prezzoProdotto').val());
+
+          if (!nome || isNaN(prezzo) || prezzo < 0) {
+            alert('Inserisci dati validi per il prodotto.');
+            return;
+          }
+
+          fetch('/api/prodotti', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token
+            },
+            body: JSON.stringify({ nome, prezzo })
+          })
+          .then(res => {
+            if (res.ok) {
+              alert('Prodotto aggiunto con successo!');
+              // Ricarica la lista prodotti
+              return fetch('/api/prodotti', {
+                headers: { 'Authorization': 'Bearer ' + token }
+              });
+            } else {
+              return res.json().then(data => { throw new Error(data.error || 'Errore'); });
+            }
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.prodotti.length === 0) {
+              $('#prodotti').text('Non hai prodotti caricati.');
+            } else {
+              let lista = '<ul class="list-group">';
+              data.prodotti.forEach(prod => {
+                lista += `<li class="list-group-item">${prod.nome} - €${prod.prezzo.toFixed(2)}</li>`;
+              });
+              lista += '</ul>';
+              $('#prodotti').html(lista);
+            }
+            $('#aggiungiProdottoForm')[0].reset();
+          })
+          .catch(err => {
+            alert('Errore: ' + err.message);
+          });
+        });
+      } else {
+        contenuto.html('<p>Ruolo non riconosciuto. Riprova il login.</p>');
+      }
+    });
   </script>
 </body>
 </html>
