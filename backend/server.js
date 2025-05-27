@@ -3,6 +3,8 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const apiRouter = require('./routes/api');
+app.use('/api', apiRouter);
 
 // Importa il pool dal file pool.js
 const pool = require('./db/pool.js');  
