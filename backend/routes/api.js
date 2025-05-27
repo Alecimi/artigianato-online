@@ -19,10 +19,14 @@ function authenticateToken(req, res, next) {
   });
 }
 
-// GET /api/products - lista tutti i prodotti
+// GET /api/products - lista tutti i prodotti con nome artigiano
 router.get('/products', async (req, res) => {
   try {
-    const result = await pool.query('SELECT p.id, p.nome, p.descrizione, p.prezzo, u.nome AS artigiano_nome FROM products p JOIN users u ON p.artigiano_id = u.id');
+    const result = await pool.query(`
+      SELECT p.id, p.nome, p.descrizione, p.prezzo, u.nome AS artigiano_nome
+      FROM prodotti p
+      JOIN users u ON p.artigiano_id = u.id
+    `);
     res.json(result.rows);
   } catch (err) {
     console.error(err);
@@ -40,7 +44,7 @@ router.post('/products', authenticateToken, async (req, res) => {
 
   try {
     await pool.query(
-      'INSERT INTO products (artigiano_id, nome, descrizione, prezzo) VALUES ($1, $2, $3, $4)',
+      'INSERT INTO prodotti (artigiano_id, nome, descrizione, prezzo) VALUES ($1, $2, $3, $4)',
       [req.user.id, nome, descrizione, prezzo]
     );
     res.status(201).json({ message: 'Prodotto aggiunto' });
@@ -50,66 +54,112 @@ router.post('/products', authenticateToken, async (req, res) => {
   }
 });
 
-// GET /api/orders - ordini per cliente o artigiano
+// GET /api/orders - ordini per cliente o artigiano, con prodotti in ogni ordine
 router.get('/orders', authenticateToken, async (req, res) => {
   try {
-    let query;
-    let params;
+    let ordersResult;
 
     if (req.user.role === 'cliente') {
-      query = `
-        SELECT o.id, o.quantita, o.stato, o.created_at, p.nome AS prodotto_nome, p.prezzo, u.nome AS artigiano_nome
-        FROM orders o
-        JOIN products p ON o.prodotto_id = p.id
+      // Prendo tutti gli ordini del cliente con i prodotti
+      ordersResult = await pool.query(`
+        SELECT o.id AS ordine_id, o.data, p.id AS prodotto_id, p.nome AS prodotto_nome, p.prezzo, op.quantita, u.nome AS artigiano_nome
+        FROM ordini o
+        JOIN ordini_prodotti op ON o.id = op.ordine_id
+        JOIN prodotti p ON op.prodotto_id = p.id
         JOIN users u ON p.artigiano_id = u.id
         WHERE o.cliente_id = $1
-        ORDER BY o.created_at DESC
-      `;
-      params = [req.user.id];
+        ORDER BY o.data DESC
+      `, [req.user.id]);
     } else if (req.user.role === 'artigiano') {
-      query = `
-        SELECT o.id, o.quantita, o.stato, o.created_at, p.nome AS prodotto_nome, u.nome AS cliente_nome
-        FROM orders o
-        JOIN products p ON o.prodotto_id = p.id
+      // Prendo tutti gli ordini che includono prodotti di questo artigiano
+      ordersResult = await pool.query(`
+        SELECT o.id AS ordine_id, o.data, p.id AS prodotto_id, p.nome AS prodotto_nome, p.prezzo, op.quantita, u.nome AS cliente_nome
+        FROM ordini o
+        JOIN ordini_prodotti op ON o.id = op.ordine_id
+        JOIN prodotti p ON op.prodotto_id = p.id
         JOIN users u ON o.cliente_id = u.id
         WHERE p.artigiano_id = $1
-        ORDER BY o.created_at DESC
-      `;
-      params = [req.user.id];
+        ORDER BY o.data DESC
+      `, [req.user.id]);
     } else {
       return res.status(403).json({ error: 'Accesso negato' });
     }
 
-    const result = await pool.query(query, params);
-    res.json(result.rows);
+    // Organizza i dati raggruppando i prodotti per ordine
+    const ordersMap = new Map();
+
+    for (const row of ordersResult.rows) {
+      if (!ordersMap.has(row.ordine_id)) {
+        ordersMap.set(row.ordine_id, {
+          ordine_id: row.ordine_id,
+          data: row.data,
+          prodotti: [],
+        });
+        if (req.user.role === 'cliente') {
+          ordersMap.get(row.ordine_id).artigiano_nome = row.artigiano_nome;
+        } else if (req.user.role === 'artigiano') {
+          ordersMap.get(row.ordine_id).cliente_nome = row.cliente_nome;
+        }
+      }
+      ordersMap.get(row.ordine_id).prodotti.push({
+        prodotto_id: row.prodotto_id,
+        nome: row.prodotto_nome,
+        prezzo: row.prezzo,
+        quantita: row.quantita,
+      });
+    }
+
+    res.json(Array.from(ordersMap.values()));
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Errore del server' });
   }
 });
 
-// POST /api/orders - crea nuovo ordine (solo cliente)
+// POST /api/orders - crea nuovo ordine (solo cliente), con più prodotti
 router.post('/orders', authenticateToken, async (req, res) => {
   if (req.user.role !== 'cliente') {
     return res.status(403).json({ error: 'Accesso negato' });
   }
 
-  const { prodotto_id, quantita } = req.body;
+  // Aspettiamo un array di prodotti con id e quantità [{ prodotto_id, quantita }]
+  const { prodotti } = req.body;
+
+  if (!Array.isArray(prodotti) || prodotti.length === 0) {
+    return res.status(400).json({ error: 'Devi fornire almeno un prodotto con quantità' });
+  }
 
   try {
-    // Controlla che il prodotto esista
-    const productCheck = await pool.query('SELECT * FROM products WHERE id = $1', [prodotto_id]);
-    if (productCheck.rows.length === 0) {
-      return res.status(400).json({ error: 'Prodotto non trovato' });
+    await pool.query('BEGIN');
+
+    // Inserisco ordine
+    const ordineResult = await pool.query(
+      'INSERT INTO ordini (cliente_id) VALUES ($1) RETURNING id',
+      [req.user.id]
+    );
+    const ordine_id = ordineResult.rows[0].id;
+
+    // Inserisco i prodotti ordinati nella tabella ordini_prodotti
+    for (const item of prodotti) {
+      const { prodotto_id, quantita } = item;
+
+      // Controllo che prodotto esista
+      const productCheck = await pool.query('SELECT id FROM prodotti WHERE id = $1', [prodotto_id]);
+      if (productCheck.rows.length === 0) {
+        await pool.query('ROLLBACK');
+        return res.status(400).json({ error: `Prodotto con id ${prodotto_id} non trovato` });
+      }
+
+      await pool.query(
+        'INSERT INTO ordini_prodotti (ordine_id, prodotto_id, quantita) VALUES ($1, $2, $3)',
+        [ordine_id, prodotto_id, quantita || 1]
+      );
     }
 
-    await pool.query(
-      'INSERT INTO orders (cliente_id, prodotto_id, quantita) VALUES ($1, $2, $3)',
-      [req.user.id, prodotto_id, quantita || 1]
-    );
-
-    res.status(201).json({ message: 'Ordine creato' });
+    await pool.query('COMMIT');
+    res.status(201).json({ message: 'Ordine creato', ordine_id });
   } catch (err) {
+    await pool.query('ROLLBACK');
     console.error(err);
     res.status(500).json({ error: 'Errore del server' });
   }
