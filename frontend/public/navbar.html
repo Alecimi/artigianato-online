@@ -6,13 +6,55 @@
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+      <ul id="navLinks" class="navbar-nav me-auto mb-2 mb-lg-0">
         <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
         <li class="nav-item"><a class="nav-link" href="catalogo.html">Catalogo</a></li>
-        <li class="nav-item"><a class="nav-link" href="profilo.html">Profilo</a></li>
-        <li class="nav-item"><a class="nav-link" href="carrello.html">Carrello</a></li>
-        <li class="nav-item"><a class="nav-link" href="login.html">Login</a></li>
+      </ul>
+      <ul id="authLinks" class="navbar-nav ms-auto mb-2 mb-lg-0">
+        <!-- Link login/logout dinamici -->
       </ul>
     </div>
   </div>
 </nav>
+
+<script>
+  const authLinks = document.getElementById('authLinks');
+  const navLinks = document.getElementById('navLinks');
+
+  const token = localStorage.getItem('token');
+  if (token) {
+    // Utente loggato
+    const payload = JSON.parse(atob(token.split('.')[1]));
+
+    // Aggiungo Profilo e Carrello
+    const profiloLink = document.createElement('li');
+    profiloLink.classList.add('nav-item');
+    profiloLink.innerHTML = `<a class="nav-link" href="profilo.html">Profilo (${payload.nome})</a>`;
+    navLinks.appendChild(profiloLink);
+
+    if (payload.role === 'cliente') {
+      const carrelloLink = document.createElement('li');
+      carrelloLink.classList.add('nav-item');
+      carrelloLink.innerHTML = `<a class="nav-link" href="carrello.html">Carrello</a>`;
+      navLinks.appendChild(carrelloLink);
+    } else if (payload.role === 'artigiano') {
+      // Potresti aggiungere link specifici per artigiano qui se serve
+    }
+
+    // Aggiungo Logout
+    const logoutLink = document.createElement('li');
+    logoutLink.classList.add('nav-item');
+    logoutLink.innerHTML = `<a class="nav-link" href="#" id="logoutBtn">Logout</a>`;
+    authLinks.appendChild(logoutLink);
+
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('token');
+      window.location.href = 'index.html';
+    });
+
+  } else {
+    // Utente non loggato
+    authLinks.innerHTML = `<li class="nav-item"><a class="nav-link" href="login.html">Login</a></li>`;
+  }
+</script>
+
