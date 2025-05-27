@@ -8,5 +8,23 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Tabella prodotti
+CREATE TABLE IF NOT EXISTS products (
+  id SERIAL PRIMARY KEY,
+  artigiano_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  nome VARCHAR(150) NOT NULL,
+  descrizione TEXT,
+  prezzo NUMERIC(10,2) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
+-- Tabella ordini
+CREATE TABLE IF NOT EXISTS orders (
+  id SERIAL PRIMARY KEY,
+  cliente_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  prodotto_id INTEGER REFERENCES products(id),
+  quantita INTEGER NOT NULL DEFAULT 1,
+  stato VARCHAR(50) DEFAULT 'in attesa',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 
