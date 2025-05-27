@@ -49,20 +49,24 @@
           <div id="ordini">Caricamento ordini...</div>
         `);
 
-        // TODO: fetch ordini dal backend
-        fetch('/api/ordini', {
+        // Fetch ordini dal backend
+        fetch('/api/orders', {
           headers: { 'Authorization': 'Bearer ' + token }
         })
         .then(res => res.json())
         .then(data => {
           if (data.error) {
             $('#ordini').text('Errore nel caricamento ordini.');
-          } else if (data.ordini.length === 0) {
+          } else if (data.length === 0) {
             $('#ordini').text('Non hai ordini passati.');
           } else {
             let lista = '<ul class="list-group">';
-            data.ordini.forEach(ord => {
-              lista += `<li class="list-group-item">Ordine #${ord.id} - Data: ${ord.data_ordine} - Totale: €${ord.totale}</li>`;
+            data.forEach(ord => {
+              lista += `<li class="list-group-item">
+                Ordine #${ord.id} - Data: ${new Date(ord.created_at).toLocaleDateString()} - 
+                Prodotto: ${ord.prodotto_nome} - Quantità: ${ord.quantita} - 
+                Prezzo: €${(ord.prezzo * ord.quantita).toFixed(2)} - Artigiano: ${ord.artigiano_nome}
+              </li>`;
             });
             lista += '</ul>';
             $('#ordini').html(lista);
@@ -90,19 +94,19 @@
         `);
 
         // Carica prodotti esistenti
-        fetch('/api/prodotti', {
+        fetch('/api/products', {
           headers: { 'Authorization': 'Bearer ' + token }
         })
         .then(res => res.json())
         .then(data => {
           if (data.error) {
             $('#prodotti').text('Errore nel caricamento prodotti.');
-          } else if (data.prodotti.length === 0) {
+          } else if (data.length === 0) {
             $('#prodotti').text('Non hai prodotti caricati.');
           } else {
             let lista = '<ul class="list-group">';
-            data.prodotti.forEach(prod => {
-              lista += `<li class="list-group-item">${prod.nome} - €${prod.prezzo.toFixed(2)}</li>`;
+            data.forEach(prod => {
+              lista += `<li class="list-group-item">${prod.nome} - €${parseFloat(prod.prezzo).toFixed(2)}</li>`;
             });
             lista += '</ul>';
             $('#prodotti').html(lista);
@@ -124,7 +128,7 @@
             return;
           }
 
-          fetch('/api/prodotti', {
+          fetch('/api/products', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -136,7 +140,7 @@
             if (res.ok) {
               alert('Prodotto aggiunto con successo!');
               // Ricarica la lista prodotti
-              return fetch('/api/prodotti', {
+              return fetch('/api/products', {
                 headers: { 'Authorization': 'Bearer ' + token }
               });
             } else {
@@ -145,12 +149,12 @@
           })
           .then(res => res.json())
           .then(data => {
-            if (data.prodotti.length === 0) {
+            if (data.length === 0) {
               $('#prodotti').text('Non hai prodotti caricati.');
             } else {
               let lista = '<ul class="list-group">';
-              data.prodotti.forEach(prod => {
-                lista += `<li class="list-group-item">${prod.nome} - €${prod.prezzo.toFixed(2)}</li>`;
+              data.forEach(prod => {
+                lista += `<li class="list-group-item">${prod.nome} - €${parseFloat(prod.prezzo).toFixed(2)}</li>`;
               });
               lista += '</ul>';
               $('#prodotti').html(lista);
