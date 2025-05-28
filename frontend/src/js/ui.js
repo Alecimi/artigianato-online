@@ -23,12 +23,12 @@ function setupNavbar() {
 
     const role = payload.role;
     if (role === 'cliente') {
-      navLinks.append('<li class="nav-item"><a class="nav-link" href="cliente-home.html">Home Cliente</a></li>');
+      navLinks.append('<li class="nav-item"><a class="nav-link" href="cliente_home.html">Home Cliente</a></li>');
       navLinks.append('<li class="nav-item"><a class="nav-link" href="catalogo.html">Catalogo</a></li>');
       navLinks.append('<li class="nav-item"><a class="nav-link" href="carrello.html">Carrello</a></li>');
       navLinks.append('<li class="nav-item"><a class="nav-link" href="profilo.html">Profilo</a></li>');
     } else if (role === 'artigiano') {
-      navLinks.append('<li class="nav-item"><a class="nav-link" href="artigiano-dashboard.html">Dashboard Artigiano</a></li>');
+      navLinks.append('<li class="nav-item"><a class="nav-link" href="artigiano_dashboard.html">Dashboard Artigiano</a></li>');
       navLinks.append('<li class="nav-item"><a class="nav-link" href="catalogo.html">Catalogo</a></li>');
       navLinks.append('<li class="nav-item"><a class="nav-link" href="profilo.html">Profilo</a></li>');
     }

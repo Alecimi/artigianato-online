@@ -21,3 +21,24 @@ footer {
   color: green;
   margin-top: 10px;
 }
+
+.hero {
+      background: url('https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1350&q=80') no-repeat center center/cover;
+      height: 60vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      text-shadow: 1px 1px 6px rgba(0,0,0,0.7);
+    }
+    .hero-content {
+      background-color: rgba(0,0,0,0.4);
+      padding: 2rem 3rem;
+      border-radius: 10px;
+      text-align: center;
+    }
+    .btn-catalogo {
+      font-size: 1.3rem;
+      padding: 1rem 2.5rem;
+      margin-top: 1.5rem;
+    }

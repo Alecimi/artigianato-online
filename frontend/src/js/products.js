@@ -33,7 +33,7 @@ $(function () {
           <h5 class="card-title">${escapeHtml(p.nome)}</h5>
           <h6 class="card-subtitle mb-2 text-muted">Artigiano: ${escapeHtml(p.artigiano_nome)}</h6>
           <p class="card-text">${escapeHtml(p.descrizione)}</p>
-          <p class="card-text"><strong>Prezzo:</strong> €${p.prezzo.toFixed(2)}</p>`;
+          <p class="card-text"><strong>Prezzo:</strong> €${Number(p.prezzo).toFixed(2)}</p>`;
 
       if (role === 'cliente') {
         card += `<button class="btn btn-primary add-to-cart" data-id="${p.id}">Aggiungi al carrello</button>`;
