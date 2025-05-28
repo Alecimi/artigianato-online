@@ -1,60 +1,34 @@
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
   <div class="container">
-    <a class="navbar-brand" href="index.html">Artigianato Online</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent"
-      aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+    <a class="navbar-brand" href="index.html">Artigianato</a>
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarContent"
+      aria-controls="navbarContent"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
       <span class="navbar-toggler-icon"></span>
     </button>
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <ul id="navLinks" class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
-        <li class="nav-item"><a class="nav-link" href="catalogo.html">Catalogo</a></li>
+
+    <div class="collapse navbar-collapse" id="navbarContent">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0" id="nav-links">
+        <!-- Link dinamici in base a login/ruolo -->
       </ul>
-      <ul id="authLinks" class="navbar-nav ms-auto mb-2 mb-lg-0">
-        <!-- Link login/logout dinamici -->
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a href="#" id="logout-btn" class="nav-link d-none">Logout</a>
+        </li>
       </ul>
     </div>
   </div>
 </nav>
 
+<script src="../src/js/ui.js"></script>
 <script>
-  const authLinks = document.getElementById('authLinks');
-  const navLinks = document.getElementById('navLinks');
-
-  const token = localStorage.getItem('token');
-  if (token) {
-    // Utente loggato
-    const payload = JSON.parse(atob(token.split('.')[1]));
-
-    // Aggiungo Profilo e Carrello
-    const profiloLink = document.createElement('li');
-    profiloLink.classList.add('nav-item');
-    profiloLink.innerHTML = `<a class="nav-link" href="profilo.html">Profilo (${payload.nome})</a>`;
-    navLinks.appendChild(profiloLink);
-
-    if (payload.role === 'cliente') {
-      const carrelloLink = document.createElement('li');
-      carrelloLink.classList.add('nav-item');
-      carrelloLink.innerHTML = `<a class="nav-link" href="carrello.html">Carrello</a>`;
-      navLinks.appendChild(carrelloLink);
-    } else if (payload.role === 'artigiano') {
-      // Potresti aggiungere link specifici per artigiano qui se serve
-    }
-
-    // Aggiungo Logout
-    const logoutLink = document.createElement('li');
-    logoutLink.classList.add('nav-item');
-    logoutLink.innerHTML = `<a class="nav-link" href="#" id="logoutBtn">Logout</a>`;
-    authLinks.appendChild(logoutLink);
-
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      localStorage.removeItem('token');
-      window.location.href = 'index.html';
-    });
-
-  } else {
-    // Utente non loggato
-    authLinks.innerHTML = `<li class="nav-item"><a class="nav-link" href="login.html">Login</a></li>`;
-  }
+  $(function () {
+    setupNavbar();
+  });
 </script>
-

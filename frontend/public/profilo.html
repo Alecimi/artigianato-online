@@ -3,171 +3,54 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Artigianato Online - Profilo</title>
+  <title>Profilo - Artigianato</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="../src/css/style.css" />
 </head>
 <body>
-
   <div id="navbar"></div>
 
-  <div class="container mt-4">
-    <h1>Il tuo Profilo</h1>
-    <div id="contenutoProfilo">
-      <p>Caricamento dati...</p>
-    </div>
-  </div>
+  <main class="container mt-4">
+    <h2>Il Mio Profilo</h2>
+    <div id="profile-info"></div>
+
+    <h4 class="mt-4">I miei ordini</h4>
+    <div id="orders-list"></div>
+  </main>
+
+  <footer class="mt-5">
+    <p>&copy; 2025 Artigianato</p>
+  </footer>
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
+  <script src="../src/js/orders.js"></script>
+  <script src="../src/js/ui.js"></script>
   <script>
-    $("#navbar").load("navbar.html");
+    $(function () {
+      $('#navbar').load('navbar.html', function () {
+        if (!requireLogin()) window.location.href = 'login.html';
 
-    $(document).ready(function() {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        window.location.href = 'login.html';
-        return;
-      }
+        const token = localStorage.getItem('token');
+        const payload = parseJwt(token);
 
-      let payload;
-      try {
-        payload = JSON.parse(atob(token.split('.')[1]));
-      } catch(e) {
-        window.location.href = 'login.html';
-        return;
-      }
-
-      const contenuto = $('#contenutoProfilo');
-      contenuto.empty();
-
-      contenuto.append(`<h3>Benvenuto, ${payload.nome}</h3>`);
-
-      if (payload.role === 'cliente') {
-        contenuto.append(`
-          <h4>I tuoi ordini passati</h4>
-          <div id="ordini">Caricamento ordini...</div>
-        `);
-
-        // Fetch ordini dal backend
-        fetch('/api/orders', {
-          headers: { 'Authorization': 'Bearer ' + token }
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data.error) {
-            $('#ordini').text('Errore nel caricamento ordini.');
-          } else if (data.length === 0) {
-            $('#ordini').text('Non hai ordini passati.');
-          } else {
-            let lista = '<ul class="list-group">';
-            data.forEach(ord => {
-              lista += `<li class="list-group-item">
-                Ordine #${ord.id} - Data: ${new Date(ord.created_at).toLocaleDateString()} - 
-                Prodotto: ${ord.prodotto_nome} - Quantità: ${ord.quantita} - 
-                Prezzo: €${(ord.prezzo * ord.quantita).toFixed(2)} - Artigiano: ${ord.artigiano_nome}
-              </li>`;
-            });
-            lista += '</ul>';
-            $('#ordini').html(lista);
-          }
-        })
-        .catch(() => {
-          $('#ordini').text('Errore nel caricamento ordini.');
+        $.ajax({
+          url: `http://localhost:3000/api/users/${payload.userId}`,
+          method: 'GET',
+          headers: { Authorization: 'Bearer ' + token },
+          success: function (user) {
+            $('#profile-info').html(`
+              <p><strong>Nome:</strong> ${user.nome}</p>
+              <p><strong>Email:</strong> ${user.email}</p>
+              <p><strong>Ruolo:</strong> ${user.role}</p>
+            `);
+          },
+          error: function () {
+            $('#profile-info').html('<p>Errore nel caricamento del profilo.</p>');
+          },
         });
 
-      } else if (payload.role === 'artigiano') {
-        contenuto.append(`
-          <h4>I tuoi prodotti</h4>
-          <div id="prodotti">Caricamento prodotti...</div>
-
-          <h5 class="mt-4">Aggiungi nuovo prodotto</h5>
-          <form id="aggiungiProdottoForm">
-            <div class="mb-3">
-              <input type="text" id="nomeProdotto" class="form-control" placeholder="Nome prodotto" required />
-            </div>
-            <div class="mb-3">
-              <input type="number" id="prezzoProdotto" class="form-control" placeholder="Prezzo (€)" min="0" step="0.01" required />
-            </div>
-            <button type="submit" class="btn btn-primary">Aggiungi</button>
-          </form>
-        `);
-
-        // Carica prodotti esistenti
-        fetch('/api/products', {
-          headers: { 'Authorization': 'Bearer ' + token }
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data.error) {
-            $('#prodotti').text('Errore nel caricamento prodotti.');
-          } else if (data.length === 0) {
-            $('#prodotti').text('Non hai prodotti caricati.');
-          } else {
-            let lista = '<ul class="list-group">';
-            data.forEach(prod => {
-              lista += `<li class="list-group-item">${prod.nome} - €${parseFloat(prod.prezzo).toFixed(2)}</li>`;
-            });
-            lista += '</ul>';
-            $('#prodotti').html(lista);
-          }
-        })
-        .catch(() => {
-          $('#prodotti').text('Errore nel caricamento prodotti.');
-        });
-
-        // Gestione form aggiungi prodotto
-        $('#aggiungiProdottoForm').submit(function(e) {
-          e.preventDefault();
-
-          const nome = $('#nomeProdotto').val().trim();
-          const prezzo = parseFloat($('#prezzoProdotto').val());
-
-          if (!nome || isNaN(prezzo) || prezzo < 0) {
-            alert('Inserisci dati validi per il prodotto.');
-            return;
-          }
-
-          fetch('/api/products', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer ' + token
-            },
-            body: JSON.stringify({ nome, prezzo })
-          })
-          .then(res => {
-            if (res.ok) {
-              alert('Prodotto aggiunto con successo!');
-              // Ricarica la lista prodotti
-              return fetch('/api/products', {
-                headers: { 'Authorization': 'Bearer ' + token }
-              });
-            } else {
-              return res.json().then(data => { throw new Error(data.error || 'Errore'); });
-            }
-          })
-          .then(res => res.json())
-          .then(data => {
-            if (data.length === 0) {
-              $('#prodotti').text('Non hai prodotti caricati.');
-            } else {
-              let lista = '<ul class="list-group">';
-              data.forEach(prod => {
-                lista += `<li class="list-group-item">${prod.nome} - €${parseFloat(prod.prezzo).toFixed(2)}</li>`;
-              });
-              lista += '</ul>';
-              $('#prodotti').html(lista);
-            }
-            $('#aggiungiProdottoForm')[0].reset();
-          })
-          .catch(err => {
-            alert('Errore: ' + err.message);
-          });
-        });
-      } else {
-        contenuto.html('<p>Ruolo non riconosciuto. Riprova il login.</p>');
-      }
+        loadOrders();
+      });
     });
   </script>
 </body>

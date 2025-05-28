@@ -1,0 +1,23 @@
+body {
+  padding-top: 70px;
+}
+
+.card {
+  margin-bottom: 20px;
+}
+
+footer {
+  padding: 20px 0;
+  text-align: center;
+  color: #666;
+}
+
+.error-message {
+  color: red;
+  margin-top: 10px;
+}
+
+.success-message {
+  color: green;
+  margin-top: 10px;
+}
