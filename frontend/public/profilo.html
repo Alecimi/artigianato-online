@@ -23,18 +23,22 @@
   </footer>
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="../src/js/orders.js"></script>
   <script src="../src/js/ui.js"></script>
+  <script src="../src/js/orders.js"></script>
+
   <script>
     $(function () {
       $('#navbar').load('navbar.html', function () {
-        if (!requireLogin()) window.location.href = 'login.html';
+        if (!requireLogin()) {
+          window.location.href = 'login.html';
+          return;
+        }
 
         const token = localStorage.getItem('token');
-        const payload = parseJwt(token);
 
+        // Usa /api/users/me, il backend legge dal token
         $.ajax({
-          url: `http://localhost:3000/api/users/${payload.userId}`,
+          url: 'http://localhost:3000/api/users/me',
           method: 'GET',
           headers: { Authorization: 'Bearer ' + token },
           success: function (user) {
@@ -43,13 +47,14 @@
               <p><strong>Email:</strong> ${user.email}</p>
               <p><strong>Ruolo:</strong> ${user.role}</p>
             `);
+
+            // Carica ordini solo dopo aver ottenuto il profilo per leggere il ruolo
+            loadOrders(user.role, token);
           },
           error: function () {
             $('#profile-info').html('<p>Errore nel caricamento del profilo.</p>');
           },
         });
-
-        loadOrders();
       });
     });
   </script>
