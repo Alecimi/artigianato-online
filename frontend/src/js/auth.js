@@ -14,9 +14,9 @@ $(function () {
         localStorage.setItem('token', res.token);
         const role = parseJwt(res.token).role;
         if (role === 'cliente') {
-          window.location.href = 'cliente-home.html';
+          window.location.href = 'cliente_home.html';
         } else if (role === 'artigiano') {
-          window.location.href = 'artigiano-dashboard.html';
+          window.location.href = 'artigiano_dashboard.html';
         } else {
           window.location.href = 'index.html';
         }
